@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "shop.apps.ShopConfig",
     "ckeditor",
     "cart.apps.CartConfig",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
