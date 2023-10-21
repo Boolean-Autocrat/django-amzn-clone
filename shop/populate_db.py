@@ -1,5 +1,5 @@
 import requests
-from .models import Product  # Import your Product model
+from .models import Product
 from django.utils.text import slugify
 from django.core.files import File
 from django.core.files.temp import NamedTemporaryFile
@@ -7,7 +7,6 @@ from django.core.management import call_command
 from django.db import transaction
 from django.utils import timezone
 
-# Define the API URL
 api_url = "https://fakestoreapi.com/products"
 
 
