@@ -40,10 +40,15 @@
                 {{ product.features|safe }}
             </div>
             {% endif %}
-            <p>Average Rating: {{ product.rating }}</p>
-            <form method="post">
-                {% csrf_token %} {{ rating_form.as_p }}
-                <button type="submit">Submit Rating</button>
+            <form id="rating-form" method="post">
+                {% csrf_token %}
+                <div id="selection">
+                    <p>Select a rating: </p>
+                    {{ rating_form.stars }}
+                    <p>Comment: </p>
+                    {{ rating_form.comment }}
+                </div>
+                <button class="submit_rating_btn" type="submit">Submit Rating</button>
             </form>
         </div>
     </div>
