@@ -5,11 +5,13 @@
 ## Features
 
 - User Authentication
-- Product Listing
-- Product Detail
-- Cart
-- Admin Panel
-- Checkout
+- Product Listings
+- Product Search (by Category and Product Name)
+- Product Filter by Category
+- Product Detail Pages
+- Cart (with dynamic quantity update and delete)
+- Admin Panel (for adding products and categories)
+- Checkout (with subtotal)
 
 ## Installation
 
