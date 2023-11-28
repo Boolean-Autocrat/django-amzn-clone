@@ -12,6 +12,7 @@ from django.conf import settings
 from cart.models import Cart, CartItem
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
 def home(request):
@@ -31,11 +32,19 @@ def product_detail(request, slug):
     if request.method == "POST":
         rating_form = RatingForm(request.POST)
         if rating_form.is_valid():
-            rating_value = rating_form.cleaned_data["stars"]
-            comment = rating_form.cleaned_data["comment"]
-            Rating.objects.create(
-                product=product, user=request.user, stars=rating_value, comment=comment
-            )
+            if not Rating.objects.filter(product=product, user=request.user).exists():
+                rating_value = rating_form.cleaned_data["stars"]
+                comment = rating_form.cleaned_data["comment"]
+                Rating.objects.create(
+                    product=product,
+                    user=request.user,
+                    stars=rating_value,
+                    comment=comment,
+                )
+            else:
+                messages.add_message(
+                    request, messages.WARNING, "You have already rated this product."
+                )
 
     return render(
         request,
@@ -108,70 +117,26 @@ def signin(request):
 
     if request.user.is_authenticated:
         return redirect("shop:home")
+
     if request.method == "POST":
         form = SignInForm(request.POST)
         if form.is_valid():
-            # check authentication
             email = form.cleaned_data.get("email")
             password = form.cleaned_data.get("password")
-            if User.objects.filter(email=email):
-                user = User.objects.filter(email=email)[0]
-                # check password
-                matched = check_password(password, user.password)
-                if matched:
-                    # the user is now valid
-                    # we'll take the cart from the current session and persist it in the database
+            user = authenticate(request, email=email, password=password)
 
-                    if not Cart.objects.filter(user=user):
-                        cart = Cart(user=user)
-                        cart.save()
-                    else:
-                        cart = Cart.objects.get(user=user)
-
-                    session_cart = request.session.get(settings.CART_SESSION_ID)
-
-                    if session_cart:
-                        for item_id, item in session_cart.items():
-                            product = Product.objects.get(id=int(item_id))
-
-                            if CartItem.objects.filter(product=product, cart=cart):
-                                item_in_cart = CartItem.objects.filter(
-                                    product=product, cart=cart
-                                )[0]
-                                # then the product already # exists
-                                # so increase the quantity
-                                item_in_cart.price = float(item["price"])
-                                item_in_cart.quantity += int(item["quantity"])
-                                item_in_cart.save()
-                            else:
-                                # if item is not present in the cart, then add it
-                                new_item = CartItem(
-                                    product=product,
-                                    price=float(item["price"]),
-                                    quantity=int(item["quantity"]),
-                                    cart=cart,
-                                )
-
-                                new_item.save()
-
-                        # destroy all items from the session
-                        del request.session[settings.CART_SESSION_ID]
-                    # login
-                    login(request, user)
-                    messages.add_message(
-                        request, messages.SUCCESS, "Signed In successfully!"
-                    )
-                    return redirect(next_url) if next_url else redirect("shop:home")
-                else:
-                    messages.add_message(
-                        request, messages.ERROR, "Email or Password doesn't match!"
-                    )
+            if user is not None:
+                login(request, user)
+                messages.success(request, "Signed In successfully!")
+                return redirect(next_url) if next_url else redirect("shop:home")
             else:
-                messages.add_message(
-                    request, messages.ERROR, "Email or Password doesn't match!"
-                )
+                messages.error(request, "Email or Password doesn't match!")
+        else:
+            messages.error(request, "Invalid form submission. Please check the form.")
+
     else:
         form = SignInForm()
+
     return render(request, "auth/signin.html", {"form": form})
 
 
